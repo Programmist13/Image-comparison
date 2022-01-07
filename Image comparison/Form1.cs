@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 
+
 //Сравнить уменьшенное изображение с другим таким же
 
 namespace Image_comparison
@@ -20,7 +21,6 @@ namespace Image_comparison
         {
             this.WindowState = FormWindowState.Maximized;            
             InitializeComponent();
-            comboBox1.SelectedItem = 0;
         }
 
         private void OpenFolder(object sender, EventArgs e)     //открываем папку с изображениями
@@ -65,7 +65,7 @@ namespace Image_comparison
                         float G = (float)((pixel & 0x0000FF00) >> 8); // зеленый
                         float B = (float)(pixel & 0x000000FF); // синий
                                                                // делаем цвет черно-белым (оттенки серого) - находим среднее арифметическое
-                        R = G = B = (R + G + B) / 3.0f;
+                        R = G = B = (R + G + B) / 3.0f;     //здесь хранится цвет пикселя в оттенках серого
                         // собираем новый пиксель по частям (по каналам)
                         UInt32 newPixel = 0xFF000000 | ((UInt32)R << 16) | ((UInt32)G << 8) | ((UInt32)B);
                         // добавляем его в Bitmap нового изображения
@@ -184,12 +184,53 @@ namespace Image_comparison
             //пиксель может иметь глубину цвета от 0 до 255 (оттенки серого)
             //посчитать количество пикселей в каждой из градаций, диапазон градаций будет указывать на процент схожести снимков
             //если взять на 100% схожести попиксельная точность, то 100% = диапазону 1, а 0% диапазону 0-255, соответственно 50%=128, т.е. 0-128, 129-255 (два диапазона)
+            int[] color_base = new int [256];   //pictureBox4
+            int[] color_base2 = new int[256];   //pictureBox2
+            int[] color_deff = new int[256];    //массив для подсчёта разницы снимков
+            float sum_diff = 0;
+            float resul = 0;
+            Bitmap input = new Bitmap(pictureBox3.Image);               // создаём экземпляр изображения, из pictureBox1
+            Bitmap input2 = new Bitmap(pictureBox5.Image);               // создаём экземпляр изображения, из pictureBox1
 
+
+            //считаем количество каждого цвета пикселя ЧБ снимка 1
+            for (int j = 0; j < input.Height; j++)
+                for (int i = 0; i < input.Width; i++)
+                {
+                    UInt32 pixel = (UInt32)(input.GetPixel(i, j).ToArgb()); // получаем цифровой цветовой код пикселя
+                    float R = (float)((pixel & 0x00FF0000) >> 16); // красный
+                    float G = (float)((pixel & 0x0000FF00) >> 8); // зеленый
+                    float B = (float)(pixel & 0x000000FF); // синий
+                    R = G = B = (R + G + B) / 3.0f;
+                    color_base[(int)(R)] ++;                    
+                }
+
+            //считаем количество каждого цвета пикселя ЧБ снимка 2
+            for (int j = 0; j < input2.Height; j++)
+                for (int i = 0; i < input2.Width; i++)
+                {
+                    UInt32 pixel = (UInt32)(input2.GetPixel(i, j).ToArgb()); 
+                    float R = (float)((pixel & 0x00FF0000) >> 16); 
+                    float G = (float)((pixel & 0x0000FF00) >> 8); 
+                    float B = (float)(pixel & 0x000000FF); 
+                    R = G = B = (R + G + B) / 3.0f;
+                    color_base2[(int)(R)]++;
+                }
+
+            //считаем разницу по количеству разных цветных пикселей по модулю
+            for (int i=0; i<256; i++)
+            {                
+                color_deff[i] = Math.Abs(color_base2[i] - color_base[i]);
+                sum_diff += color_deff[i];                
+                resul = Math.Abs(((sum_diff * 100) / 2550000)*100-100);            
+            }
+
+            label2.Text = string.Format("Степень оригинальности {0:F2}%", resul);
         }
-
     }
 }
 /*
+ * Console.WriteLine(string.Format("{0:F1}", 123.233424224));
 foreach (string filename in boxfiles)
             {
                 listBox1.Items.Add(filename);
