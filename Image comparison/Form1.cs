@@ -16,26 +16,46 @@ namespace Image_comparison
 {
     public partial class Form1 : Form
     {
-        string[] boxfiles;
+        string[] boxfiles;                  //храним полный путь к каждому файлу
+        Bitmap[] image_box_all_small;       //массив для хранения копий изображений уменьшенного масштаба
+        int count_images;                   //общее количество снимков
+        object[][,] comprasion_list;         //список сопоставлений фотографий
+        int[][] temp_count_colors;
+        //в массиве массивов первый ряд элементов должен соответсвовать количеству снимков
+        /*int[][] nums = new int[3][];
+        nums[0] = new int[2] { 1, 2 };          // выделяем память для первого подмассива
+        nums[1] = new int[3] { 1, 2, 3 };       // выделяем память для второго подмассива
+        nums[2] = new int[5] { 1, 2, 3, 4, 5 }; // выделяем память для третьего подмассива
+        */
         public Form1()
         {
             this.WindowState = FormWindowState.Maximized;            
             InitializeComponent();
+            comboBox1.SelectedIndex = 1;
         }
 
         private void OpenFolder(object sender, EventArgs e)     //открываем папку с изображениями
         {
             folderBrowserDialog1.ShowDialog();                                                      //отображаем диалоговое окно
             Label_folder.Text = folderBrowserDialog1.SelectedPath;                                  //отображаем выбранный путь 
-            string[] filebox = Directory.GetFiles(folderBrowserDialog1.SelectedPath, "*.jpg", SearchOption.AllDirectories);
+            boxfiles = Directory.GetFiles(folderBrowserDialog1.SelectedPath, "*.jpg", SearchOption.AllDirectories);
             var allfiles = new DirectoryInfo(folderBrowserDialog1.SelectedPath);                    //создаём экземпляр класса с указанием пути
             foreach (FileInfo file in allfiles.GetFiles("*.jpg", SearchOption.AllDirectories))      //перебираем все файлы jpg, включая вложенные папки
             {
                 listBox1.Items.Add(Path.GetFileNameWithoutExtension(file.FullName));                //отображаем имена файлов стобликом
             }
-            boxfiles = Directory.GetFiles(folderBrowserDialog1.SelectedPath, "*.jpg", SearchOption.AllDirectories);
             listBox1.SelectedIndex = 0;
-            
+            count_images = boxfiles.Length;
+            temp_count_colors = new int[count_images][];
+            comprasion_list = new string[count_images][,];
+            image_box_all_small = new Bitmap[count_images];                                      //делаем маленькие копии изображений и сохраняем их в массив
+            for (int i=0; i<count_images; i++)                                                   
+            {
+                ReSize(i);
+            }
+            splitting();
+            //comprasion_difference();
+
         }
 
         private void Select_Picture(object sender, EventArgs e)     //показываем выбраное изображение
@@ -48,38 +68,9 @@ namespace Image_comparison
             pictureBox1.Invalidate();
         }
 
-        private void Convert_WB(object sender, EventArgs e)         //преобразовываем в ЧБ
+        void ReSize(int i)             //уменьшаем изображения и сохраняем их в массив image_box_all_small
         {
-            if (pictureBox3.Image != null) // если изображение в pictureBox1 имеется
-            {
-                
-                Bitmap input = new Bitmap(pictureBox3.Image);               // создаём экземпляр изображения, из pictureBox1
-                Bitmap output = new Bitmap(input.Width, input.Height);      // создаём новое изображение по размерам исходного
-                // перебираем в циклах все пиксели исходного изображения
-                for (int j = 0; j < input.Height; j++)
-                    for (int i = 0; i < input.Width; i++)
-                    {
-                        UInt32 pixel = (UInt32)(input.GetPixel(i, j).ToArgb()); // получаем цифровой цветовой код пикселя
-                        // получаем компоненты цветов пикселя
-                        float R = (float)((pixel & 0x00FF0000) >> 16); // красный
-                        float G = (float)((pixel & 0x0000FF00) >> 8); // зеленый
-                        float B = (float)(pixel & 0x000000FF); // синий
-                                                               // делаем цвет черно-белым (оттенки серого) - находим среднее арифметическое
-                        R = G = B = (R + G + B) / 3.0f;     //здесь хранится цвет пикселя в оттенках серого
-                        // собираем новый пиксель по частям (по каналам)
-                        UInt32 newPixel = 0xFF000000 | ((UInt32)R << 16) | ((UInt32)G << 8) | ((UInt32)B);
-                        // добавляем его в Bitmap нового изображения
-                        output.SetPixel(i, j, Color.FromArgb((int)newPixel));
-                    }
-                // выводим черно-белый Bitmap в pictureBox2
-                pictureBox4.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-                pictureBox4.Image = output;
-            }
-        }
-
-        private void ReSize(object sender, EventArgs e)             //уменьшение изображения
-        {
-                Bitmap input = new Bitmap(pictureBox1.Image);               
+                Bitmap input = new Bitmap(boxfiles[i]);               
                 int newWidth, newHeight;
                 int nWidth, nHeight;
                 nWidth = 100;
@@ -108,125 +99,92 @@ namespace Image_comparison
                     g.DrawImage(input, 0, 0, newWidth, newHeight);
                     g.Dispose();
                 }
-            pictureBox3.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            pictureBox3.Image = output;
-
-
+            image_box_all_small[i] = output;
         }
 
-        private void button4_Click(object sender, EventArgs e)
-        {
-            Bitmap input = new Bitmap(pictureBox1.Image);
-            int newWidth, newHeight;
-            int nWidth, nHeight;
-            nWidth = 100;
-            nHeight = 100;
-            var coefH = (double)nHeight / (double)input.Height;
-            var coefW = (double)nWidth / (double)input.Width;
-            if (coefW >= coefH)
+        //метод разбивает каждый маленький снимок по цветам и записывает информацию по количеству цветов в отдельный массив массивов comprasion_list
+        void splitting ()
+        {            
+            for (int i = 0; i < count_images; i++)
             {
-                newHeight = (int)(input.Height * coefH);
-                newWidth = (int)(input.Width * coefH);
-            }
-            else
-            {
-                newHeight = (int)(input.Height * coefW);
-                newWidth = (int)(input.Width * coefW);
-            }
-
-            Bitmap output = new Bitmap(newWidth, newHeight);
-            using (var g = Graphics.FromImage(output))
-            {
-
-                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-
-                g.DrawImage(input, 0, 0, newWidth, newHeight);
-                g.Dispose();
-            }
-            pictureBox5.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            pictureBox5.Image = output;
-        }
-
-        private void button5_Click(object sender, EventArgs e)
-        {
-            if (pictureBox3.Image != null) // если изображение в pictureBox1 имеется
-            {
-
-                Bitmap input = new Bitmap(pictureBox5.Image);               // создаём экземпляр изображения, из pictureBox1
-                Bitmap output = new Bitmap(input.Width, input.Height);      // создаём новое изображение по размерам исходного
-                // перебираем в циклах все пиксели исходного изображения
-                for (int j = 0; j < input.Height; j++)
-                    for (int i = 0; i < input.Width; i++)
+                temp_count_colors[i] = new int[256];
+                for (int j = 0; j < image_box_all_small[i].Height; j++)
+                    for (int k = 0; k < image_box_all_small[i].Width; k++)
                     {
-                        UInt32 pixel = (UInt32)(input.GetPixel(i, j).ToArgb()); // получаем цифровой цветовой код пикселя
-                        // получаем компоненты цветов пикселя
-                        float R = (float)((pixel & 0x00FF0000) >> 16); // красный
-                        float G = (float)((pixel & 0x0000FF00) >> 8); // зеленый
-                        float B = (float)(pixel & 0x000000FF); // синий
-                                                               // делаем цвет черно-белым (оттенки серого) - находим среднее арифметическое
+                        UInt32 pixel = (UInt32)(image_box_all_small[i].GetPixel(i, j).ToArgb());
+                        float R = (float)((pixel & 0x00FF0000) >> 16);
+                        float G = (float)((pixel & 0x0000FF00) >> 8);
+                        float B = (float)(pixel & 0x000000FF);
                         R = G = B = (R + G + B) / 3.0f;
-                        // собираем новый пиксель по частям (по каналам)
-                        UInt32 newPixel = 0xFF000000 | ((UInt32)R << 16) | ((UInt32)G << 8) | ((UInt32)B);
-                        // добавляем его в Bitmap нового изображения
-                        output.SetPixel(i, j, Color.FromArgb((int)newPixel));
+                        //nums[0] = new int[2] { 1, 2 };                        
+                        temp_count_colors[i][(int)(R)]++;                                //считаем количество цветов
                     }
-                // выводим черно-белый Bitmap в pictureBox2
-                pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-                pictureBox2.Image = output;
             }
         }
 
-        private void button6_Click(object sender, EventArgs e)
+        //метод считает разницу между снимками в цифровом эквиваленте и записывает для каждого изображения сопоставления
+        //формирует список похожести (с указанием в процентах) для каждой фотографии
+        //дописать метод comprasion_difference чтобы он умел перебирать фото которые сравнивает с оригинало
+        void comprasion_difference()
         {
-            //pictureBox4, picturebox2
+            int[] color_deff = new int[256];
+            int sum_diff;
+            int resul;
+
+            for (int i = 0; i < count_images; i++)
+            {
+                sum_diff = 0;
+                comprasion_list[i] = new string[count_images,count_images];
+                for (int k = 0; k < 256; k++)
+                {                    
+                    color_deff[k] = Math.Abs(temp_count_colors[i][k] - color_base2[k]);           //фиксируем разницу по каждому цвету между сравниваемыми снимками
+                    sum_diff += color_deff[k];                                          //накапливаем общую разницу между снимками
+                    resul = Math.Abs(((sum_diff * 100) / 2550000) * 100 - 100);         //вычисляем общую степень схожести в процентах
+                    //если у снимка схожесть более 75% только тогда вносим его в список похожих фотографий
+                    if (resul>75)
+                    {
+                        comprasion_list[i][1,1] = ("путь снимка", resul );
+                        //int[,] numbers = { { 1, 2, 3 }, { 4, 5, 6 }};
+                    }
+                }
+            }
+        }
+        /*void Comprasion(int i)      //сравнение
+        {
             //пиксель может иметь глубину цвета от 0 до 255 (оттенки серого)
-            //посчитать количество пикселей в каждой из градаций, диапазон градаций будет указывать на процент схожести снимков
+            //записать какого цвета каждый пиксель
             //если взять на 100% схожести попиксельная точность, то 100% = диапазону 1, а 0% диапазону 0-255, соответственно 50%=128, т.е. 0-128, 129-255 (два диапазона)
-            int[] color_base = new int [256];   //pictureBox4
-            int[] color_base2 = new int[256];   //pictureBox2
+            int[] color_base = new int [256];   //массив для подсчёта количества каждого цвета пикселя изображения 1
+            int[] color_base2 = new int[256];   //изображение с которым сравниваем
             int[] color_deff = new int[256];    //массив для подсчёта разницы снимков
             float sum_diff = 0;
             float resul = 0;
-            Bitmap input = new Bitmap(pictureBox3.Image);               // создаём экземпляр изображения, из pictureBox1
-            Bitmap input2 = new Bitmap(pictureBox5.Image);               // создаём экземпляр изображения, из pictureBox1
 
-
-            //считаем количество каждого цвета пикселя ЧБ снимка 1
-            for (int j = 0; j < input.Height; j++)
-                for (int i = 0; i < input.Width; i++)
+            //считаем количество каждого цвета пикселя ЧБ изображения 1
+            //каждый индекс массива соответствует отдельному цвету от 0 до 255
+            for (int j = 0; j < image_box_all_small[i].Height; j++)
+                for (int k = 0; k < image_box_all_small[i].Width; k++)
                 {
-                    UInt32 pixel = (UInt32)(input.GetPixel(i, j).ToArgb()); // получаем цифровой цветовой код пикселя
-                    float R = (float)((pixel & 0x00FF0000) >> 16); // красный
-                    float G = (float)((pixel & 0x0000FF00) >> 8); // зеленый
-                    float B = (float)(pixel & 0x000000FF); // синий
+                    UInt32 pixel = (UInt32)(image_box_all_small[i].GetPixel(i, j).ToArgb()); // получаем цифровой цветовой код пикселя
+                    float R = (float)((pixel & 0x00FF0000) >> 16);  // красный
+                    float G = (float)((pixel & 0x0000FF00) >> 8);   // зеленый
+                    float B = (float)(pixel & 0x000000FF);          // синий
                     R = G = B = (R + G + B) / 3.0f;
                     color_base[(int)(R)] ++;                    
                 }
 
-            //считаем количество каждого цвета пикселя ЧБ снимка 2
-            for (int j = 0; j < input2.Height; j++)
-                for (int i = 0; i < input2.Width; i++)
-                {
-                    UInt32 pixel = (UInt32)(input2.GetPixel(i, j).ToArgb()); 
-                    float R = (float)((pixel & 0x00FF0000) >> 16); 
-                    float G = (float)((pixel & 0x0000FF00) >> 8); 
-                    float B = (float)(pixel & 0x000000FF); 
-                    R = G = B = (R + G + B) / 3.0f;
-                    color_base2[(int)(R)]++;
-                }
-
             //считаем разницу по количеству разных цветных пикселей по модулю
-            for (int i=0; i<256; i++)
+            //Чем больше непохожесть цвета, тем больше разница изображений
+            for (int k=0; k<256; k++)
             {                
-                color_deff[i] = Math.Abs(color_base2[i] - color_base[i]);
-                sum_diff += color_deff[i];                
+                color_deff[k] = Math.Abs(color_base2[k] - color_base[k]);
+                sum_diff += color_deff[k];                
                 resul = Math.Abs(((sum_diff * 100) / 2550000)*100-100);            
             }
 
             label2.Text = string.Format("Степень оригинальности {0:F2}%", resul);
-        }
+        }*/
+
     }
 }
 /*
