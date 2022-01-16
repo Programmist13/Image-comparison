@@ -132,6 +132,7 @@ namespace Image_comparison
             this.listBox2.Name = "listBox2";
             this.listBox2.Size = new System.Drawing.Size(268, 901);
             this.listBox2.TabIndex = 19;
+            this.listBox2.SelectedIndexChanged += new System.EventHandler(this.Select_Picture2);
             // 
             // Form1
             // 

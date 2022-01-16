@@ -19,14 +19,9 @@ namespace Image_comparison
         string[] boxfiles;                  //храним полный путь к каждому файлу
         Bitmap[] image_box_all_small;       //массив для хранения копий изображений уменьшенного масштаба
         int count_images;                   //общее количество снимков
-        object[][,] comprasion_list;         //список сопоставлений фотографий
-        int[][] temp_count_colors;
-        //в массиве массивов первый ряд элементов должен соответсвовать количеству снимков
-        /*int[][] nums = new int[3][];
-        nums[0] = new int[2] { 1, 2 };          // выделяем память для первого подмассива
-        nums[1] = new int[3] { 1, 2, 3 };       // выделяем память для второго подмассива
-        nums[2] = new int[5] { 1, 2, 3, 4, 5 }; // выделяем память для третьего подмассива
-        */
+        string[][,] comprasion_list;        //список сопоставлений фотографий
+        int[][] temp_count_colors;          //хранит в себе количество цвета каждого снимка
+
         public Form1()
         {
             this.WindowState = FormWindowState.Maximized;            
@@ -44,7 +39,7 @@ namespace Image_comparison
             {
                 listBox1.Items.Add(Path.GetFileNameWithoutExtension(file.FullName));                //отображаем имена файлов стобликом
             }
-            listBox1.SelectedIndex = 0;
+            
             count_images = boxfiles.Length;
             temp_count_colors = new int[count_images][];
             comprasion_list = new string[count_images][,];
@@ -54,11 +49,11 @@ namespace Image_comparison
                 ReSize(i);
             }
             splitting();
-            //comprasion_difference();
-
+            comprasion_difference();
+            listBox1.SelectedIndex = 0;
         }
 
-        private void Select_Picture(object sender, EventArgs e)     //показываем выбраное изображение
+        private void Select_Picture(object sender, EventArgs e)     //показываем выбраное изображение и список похожих фото
         {
             Bitmap image;
             image = new Bitmap(boxfiles[listBox1.SelectedIndex]);
@@ -66,6 +61,7 @@ namespace Image_comparison
             //this.pictureBox1.Size = image.Size;
             pictureBox1.Image = image;
             pictureBox1.Invalidate();
+            out_resul(listBox1.SelectedIndex);
         }
 
         void ReSize(int i)             //уменьшаем изображения и сохраняем их в массив image_box_all_small
@@ -124,31 +120,93 @@ namespace Image_comparison
 
         //метод считает разницу между снимками в цифровом эквиваленте и записывает для каждого изображения сопоставления
         //формирует список похожести (с указанием в процентах) для каждой фотографии
-        //дописать метод comprasion_difference чтобы он умел перебирать фото которые сравнивает с оригинало
         void comprasion_difference()
         {
             int[] color_deff = new int[256];
-            int sum_diff;
-            int resul;
+            float sum_diff;
+            float resul;
+            
 
-            for (int i = 0; i < count_images; i++)
+            for (int i = 0; i < count_images; i++)          //первым for i перебираем все снимки оригинала
             {
-                sum_diff = 0;
-                comprasion_list[i] = new string[count_images,count_images];
-                for (int k = 0; k < 256; k++)
-                {                    
-                    color_deff[k] = Math.Abs(temp_count_colors[i][k] - color_base2[k]);           //фиксируем разницу по каждому цвету между сравниваемыми снимками
-                    sum_diff += color_deff[k];                                          //накапливаем общую разницу между снимками
-                    resul = Math.Abs(((sum_diff * 100) / 2550000) * 100 - 100);         //вычисляем общую степень схожести в процентах
-                    //если у снимка схожесть более 75% только тогда вносим его в список похожих фотографий
-                    if (resul>75)
+                comprasion_list[i] = new string[count_images,2];
+                int x = 0;
+
+                for (int j = 0; j < count_images; j++)      //вторым for j перебираем снимки с которыми сравниваем
+                {
+                    sum_diff = 0;
+                    
+
+                    if (i != j)                             //исключавем сравнение фото с самим собой
+                    {                     
+                        for (int k = 0; k < 256; k++)                                           //for k - перебирает цветовой диапазон каждого снимка
+                        {
+                            color_deff[k] = Math.Abs(temp_count_colors[i][k] - temp_count_colors[j][k]);            //фиксируем разницу по каждому цвету между сравниваемыми снимками
+                            sum_diff += color_deff[k];                                                              //накапливаем общую разницу между снимками
+                            resul = Math.Abs(((sum_diff * 100) / 2550000) * 100 - 100);                             //вычисляем общую степень схожести в процентах
+                                                                                                                    //если у снимка схожесть более 75% только тогда вносим его в список похожих фотографий
+                            if (k==255 & resul > 50)
+                                
+                            {
+                                comprasion_list[i][x,0] = Convert.ToString(boxfiles[j]);
+                                comprasion_list[i][x,1] = Convert.ToString(resul);
+                                x++;                                
+                            }
+                        }
+                    }
+                    
+                }
+            }
+            sorting();
+        }
+
+        //сортировка массива ассицаций похожих фотографий по степени убывания
+        void sorting()
+        {
+            //написать метод сортировки массива comprasion_list
+            //сортировка пузыриком по убыванию значений
+            for (int k = 0; k < count_images; k++)
+            {
+                for (int i = 0; i < count_images; i++)
+                {
+                    for (int j = 0; j < count_images - 1; j++)
                     {
-                        comprasion_list[i][1,1] = ("путь снимка", resul );
-                        //int[,] numbers = { { 1, 2, 3 }, { 4, 5, 6 }};
+                        if (Convert.ToSingle(comprasion_list[k][j,1]) < Convert.ToSingle(comprasion_list[k][j + 1,1]))
+                        {
+                            string temp_patch = comprasion_list[k][j,0];
+                            string temp_perc = comprasion_list[k][j,1];
+                            comprasion_list[k][j,0] = comprasion_list[k][j + 1,0];
+                            comprasion_list[k][j,1] = comprasion_list[k][j + 1,1];
+                            comprasion_list[k][j + 1, 0] = temp_patch;
+                            comprasion_list[k][j + 1, 1] = temp_perc;
+
+                        }
                     }
                 }
             }
         }
+
+        void out_resul(int i)
+        {
+            for (int j=0; j<comprasion_list.Length; j++)
+            {
+                if (comprasion_list[i][j, 0] != null)
+                {
+                    listBox2.Items.Add(Convert.ToString(comprasion_list[i][j, 1]).Substring(0, 5) + "% - " + Convert.ToString(Path.GetFileNameWithoutExtension(comprasion_list[i][j, 0])));
+                }
+            }
+            listBox1.SelectedIndex = 0;
+        }
+
+        private void Select_Picture2(object sender, EventArgs e)
+        {
+            Bitmap image;
+            image = new Bitmap(comprasion_list[0][listBox2.SelectedIndex,0]);               //подумать как выводить файлы незная (или знаю) какой item выбран в Select_Index1
+            pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            pictureBox2.Image = image;
+            pictureBox2.Invalidate();
+        }
+
         /*void Comprasion(int i)      //сравнение
         {
             //пиксель может иметь глубину цвета от 0 до 255 (оттенки серого)
@@ -188,11 +246,5 @@ namespace Image_comparison
     }
 }
 /*
- * Console.WriteLine(string.Format("{0:F1}", 123.233424224));
-foreach (string filename in boxfiles)
-            {
-                listBox1.Items.Add(filename);
-            }
 
-Типичное изображение в градациях серого — 256 оттенков серого в диапазоне от 0 (черный) до 255 (белый).
  */
