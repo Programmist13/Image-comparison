@@ -107,6 +107,7 @@ namespace Image_comparison
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(121, 21);
             this.comboBox1.TabIndex = 15;
+            this.comboBox1.SelectionChangeCommitted += new System.EventHandler(this.select_level_origin);
             // 
             // pictureBox2
             // 
