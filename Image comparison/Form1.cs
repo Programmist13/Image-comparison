@@ -19,7 +19,6 @@ namespace Image_comparison
         string[] boxfiles;                  //храним полный путь к каждому файлу
         int count_images;                   //общее количество снимков
         string[][,] comprasion_list;        //список сопоставлений фотографий
-        //int[][] temp_count_colors;          //хранит в себе количество цвета каждого снимка
         int[] origin_small_count = new int[256];
         int[] comp_small_count = new int[256];
         int origin_level=50;                //степень оригинальности
@@ -75,12 +74,13 @@ namespace Image_comparison
 
         private void Select_Picture(object sender, EventArgs e)     //показываем выбраное изображение и список похожих фото
         {
-            Bitmap image;
-            image = new Bitmap(boxfiles[listBox1.SelectedIndex]);
+            if (pictureBox1.Image != null)
+            {
+                pictureBox1.Image.Dispose();
+            }
             pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            pictureBox1.Image = image;
-            pictureBox1.Invalidate();
-            out_resul(listBox1.SelectedIndex);
+            pictureBox1.Image = Image.FromFile(boxfiles[listBox1.SelectedIndex]);
+            //out_resul(listBox1.SelectedIndex);
         }
 
         void ReSize(int i, bool flag)             //уменьшаем изображения и сохраняем их в массив image_box_all_small
@@ -220,10 +220,8 @@ namespace Image_comparison
 
         private void Select_Picture2(object sender, EventArgs e)
         {
-            Bitmap image;
-            image = new Bitmap(comprasion_list[listBox1.SelectedIndex][listBox2.SelectedIndex,0]);              
             pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            pictureBox2.Image = image;
+            pictureBox2.Image = Image.FromFile(boxfiles[listBox2.SelectedIndex]);
             pictureBox2.Invalidate();
         }
 
