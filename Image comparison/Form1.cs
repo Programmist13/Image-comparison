@@ -17,11 +17,15 @@ namespace Image_comparison
     public partial class Form1 : Form
     {
         string[] boxfiles;                  //храним полный путь к каждому файлу
-        Bitmap[] image_box_all_small;       //массив для хранения копий изображений уменьшенного масштаба
         int count_images;                   //общее количество снимков
         string[][,] comprasion_list;        //список сопоставлений фотографий
-        int[][] temp_count_colors;          //хранит в себе количество цвета каждого снимка
-        int origin_level=50;                   //степень оригинальности
+        //int[][] temp_count_colors;          //хранит в себе количество цвета каждого снимка
+        int[] origin_small_count = new int[256];
+        int[] comp_small_count = new int[256];
+        int origin_level=50;                //степень оригинальности
+        Bitmap Origin = new Bitmap(100,100);
+        Bitmap origin_small;
+
 
         public Form1()
         {
@@ -52,21 +56,25 @@ namespace Image_comparison
 
 
             count_images = boxfiles.Length;
-            temp_count_colors = new int[count_images][];
             comprasion_list = new string[count_images][,];
-            image_box_all_small = new Bitmap[count_images];                                      //делаем маленькие копии изображений и сохраняем их в массив
             for (int i=0; i<count_images; i++)                                                   
             {
-                ReSize(i);
+                ReSize(i, true);
+                for (int j = 0; j < count_images; j++)
+                {
+                    if (i != j)
+                    {
+                        ReSize(j, false);
+                        comprasion_difference(i,j);
+                    }
+                }
             }
-            splitting();
-            comprasion_difference();
+            sorting();
             listBox1.SelectedIndex = 0;
         }
 
         private void Select_Picture(object sender, EventArgs e)     //показываем выбраное изображение и список похожих фото
         {
-            
             Bitmap image;
             image = new Bitmap(boxfiles[listBox1.SelectedIndex]);
             pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
@@ -75,107 +83,95 @@ namespace Image_comparison
             out_resul(listBox1.SelectedIndex);
         }
 
-        void ReSize(int i)             //уменьшаем изображения и сохраняем их в массив image_box_all_small
+        void ReSize(int i, bool flag)             //уменьшаем изображения и сохраняем их в массив image_box_all_small
         {
             try
             {
-                Bitmap input = new Bitmap(boxfiles[i]);
+                Origin = new Bitmap(boxfiles[i]);
+                
                 int newWidth, newHeight;
                 int nWidth, nHeight;
                 nWidth = 100;
                 nHeight = 100;
-                var coefH = (double)nHeight / (double)input.Height;
-                var coefW = (double)nWidth / (double)input.Width;
+                var coefH = (double)nHeight / (double)Origin.Height;
+                var coefW = (double)nWidth / (double)Origin.Width;
                 if (coefW >= coefH)
                 {
-                    newHeight = (int)(input.Height * coefH);
-                    newWidth = (int)(input.Width * coefH);
+                    newHeight = (int)(Origin.Height * coefH);
+                    newWidth = (int)(Origin.Width * coefH);
                 }
                 else
                 {
-                    newHeight = (int)(input.Height * coefW);
-                    newWidth = (int)(input.Width * coefW);
+                    newHeight = (int)(Origin.Height * coefW);
+                    newWidth = (int)(Origin.Width * coefW);
                 }
-
-                Bitmap output = new Bitmap(newWidth, newHeight);
-                using (var g = Graphics.FromImage(output))
-                {
-
-                    g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-
-                    g.DrawImage(input, 0, 0, newWidth, newHeight);
-                    g.Dispose();
-                }
-                image_box_all_small[i] = output;
+                
+                origin_small = new Bitmap(Origin, new Size(newWidth, newHeight));
+                Origin.Dispose();
+                splitting(origin_small, flag);
             }
             catch (OutOfMemoryException)
             {
-                MessageBox.Show("ОЗУ не хватает", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Переполнение оперативной памяти", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.Close();
             }
             
         }
 
         //метод разбивает каждый маленький снимок по цветам и записывает информацию по количеству цветов в отдельный массив массивов comprasion_list
-        void splitting ()
-        {            
-            for (int i = 0; i < count_images; i++)
+        void splitting (Bitmap input, bool flag)
+        {            if (flag)
             {
-                temp_count_colors[i] = new int[256];
-                for (int j = 0; j < image_box_all_small[i].Height; j++)
-                    for (int k = 0; k < image_box_all_small[i].Width; k++)
+                for (int j = 0; j < input.Height; j++)
+                    for (int k = 0; k < input.Width; k++)
                     {
-                        UInt32 pixel = (UInt32)(image_box_all_small[i].GetPixel(k, j).ToArgb());
+                        UInt32 pixel = (UInt32)(input.GetPixel(k, j).ToArgb());
                         float R = (float)((pixel & 0x00FF0000) >> 16);
                         float G = (float)((pixel & 0x0000FF00) >> 8);
                         float B = (float)(pixel & 0x000000FF);
-                        R = G = B = (R + G + B) / 3.0f;                   
-                        temp_count_colors[i][(int)(R)]++;                                //считаем количество цветов
+                        R = G = B = (R + G + B) / 3.0f;
+                        origin_small_count[(int)(R)]++;                                //считаем количество цветов
                     }
             }
+            if(!flag)
+            {
+                for (int j = 0; j < input.Height; j++)
+                    for (int k = 0; k < input.Width; k++)
+                    {
+                        UInt32 pixel = (UInt32)(input.GetPixel(k, j).ToArgb());
+                        float R = (float)((pixel & 0x00FF0000) >> 16);
+                        float G = (float)((pixel & 0x0000FF00) >> 8);
+                        float B = (float)(pixel & 0x000000FF);
+                        R = G = B = (R + G + B) / 3.0f;
+                        comp_small_count[(int)(R)]++;                                //считаем количество цветов
+                    }
+
+            }
+            
         }
 
-        //метод считает разницу между снимками в цифровом эквиваленте и записывает для каждого изображения сопоставления
-        void comprasion_difference()
+        //метод считает разницу между снимками в цифровом эквиваленте и записывает для каждого изображения сопоставления      
+        void comprasion_difference(int i, int j)
         {
             int[] color_deff = new int[256];
             decimal sum_diff;
             decimal resul;
-            
-
-            for (int i = 0; i < count_images; i++)          //первым for i перебираем все снимки оригинала
-            {
-                comprasion_list[i] = new string[count_images,2];
-                int x = 0;
-
-                for (int j = 0; j < count_images; j++)      //вторым for j перебираем снимки с которыми сравниваем
+            comprasion_list[i] = new string[count_images,2];
+            int x = 0;
+            sum_diff = 0;
+                for (int k = 0; k < 256; k++)                                           //for k - перебирает цветовой диапазон каждого снимка
                 {
-                    sum_diff = 0;
-                    
-
-                    if (i != j)                             //исключавем сравнение фото с самим собой
-                    {                     
-                        for (int k = 0; k < 256; k++)                                           //for k - перебирает цветовой диапазон каждого снимка
-                        {
-                            color_deff[k] = Math.Abs(temp_count_colors[i][k] - temp_count_colors[j][k]);            //фиксируем разницу по каждому цвету между сравниваемыми снимками
-                            sum_diff += color_deff[k];                                                              //накапливаем общую разницу между снимками
-                            resul = Math.Round(Math.Abs(((sum_diff * 100) / 2550000) * 100 - 100),2);                             //вычисляем общую степень схожести в процентах
-                                                                                                                    //если у снимка схожесть более 75% только тогда вносим его в список похожих фотографий
-                            if (k==255)
-                                
-                            {
-                                comprasion_list[i][x,0] = Convert.ToString(boxfiles[j]);
-                                comprasion_list[i][x,1] = Convert.ToString(resul);
-                                x++;                                
-                            }
-                        }
+                    color_deff[k] = Math.Abs(origin_small_count[k] - comp_small_count[k]);            //фиксируем разницу по каждому цвету между сравниваемыми снимками
+                    sum_diff += color_deff[k];                                                              //накапливаем общую разницу между снимками
+                    resul = Math.Round(Math.Abs(((sum_diff * 100) / 2550000) * 100 - 100),2);                             //вычисляем общую степень схожести в процентах
+                                                                                                                   //если у снимка схожесть более 75% только тогда вносим его в список похожих фотографий
+                    if (k==255)
+                    {
+                        comprasion_list[i][x,0] = Convert.ToString(boxfiles[j]);
+                        comprasion_list[i][x,1] = Convert.ToString(resul);
+                        x++;                                
                     }
-                    
                 }
-            }
-            sorting();
         }
 
         //сортировка массива ассицаций похожих фотографий по степени убывания
