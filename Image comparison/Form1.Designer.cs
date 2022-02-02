@@ -39,6 +39,8 @@ namespace Image_comparison
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.label3 = new System.Windows.Forms.Label();
             this.listBox2 = new System.Windows.Forms.ListBox();
+            this.PB1_percent_label = new System.Windows.Forms.Label();
+            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             this.SuspendLayout();
@@ -135,11 +137,23 @@ namespace Image_comparison
             this.listBox2.TabIndex = 19;
             this.listBox2.SelectedIndexChanged += new System.EventHandler(this.Select_Picture2);
             // 
+            // PB1_percent_label
+            // 
+            this.PB1_percent_label.Location = new System.Drawing.Point(0, 0);
+            this.PB1_percent_label.Name = "PB1_percent_label";
+            this.PB1_percent_label.Size = new System.Drawing.Size(100, 23);
+            this.PB1_percent_label.TabIndex = 0;
+            // 
+            // backgroundWorker1
+            // 
+            this.backgroundWorker1.WorkerReportsProgress = true;
+            this.backgroundWorker1.WorkerSupportsCancellation = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1924, 985);
+            this.ClientSize = new System.Drawing.Size(1370, 749);
             this.Controls.Add(this.listBox2);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.pictureBox2);
@@ -170,6 +184,9 @@ namespace Image_comparison
         private System.Windows.Forms.PictureBox pictureBox2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.ListBox listBox2;
+        private System.Windows.Forms.Label PB1_percent;
+        private System.Windows.Forms.Label PB1_percent_label;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
     }
 }
 

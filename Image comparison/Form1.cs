@@ -8,9 +8,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.Threading;
 
 
-//Сравнить уменьшенное изображение с другим таким же
+
 
 namespace Image_comparison
 {
@@ -25,15 +26,22 @@ namespace Image_comparison
         Bitmap origin_small = new Bitmap(100, 100);                //делаем ссылку для маленького снимка
         Bitmap comp_small = new Bitmap(100, 100);
         Bitmap Picture_2 = new Bitmap(100, 100);
-        int x = 0;          //счётчик сравниваемых фото для comprassion_difference
-        int[] color_deff = new int[256]; 
-
+        int x = 0;                          //счётчик сравниваемых фото для comprassion_difference
+        int[] color_deff = new int[256];
+        
         public Form1()
         {
             this.WindowState = FormWindowState.Maximized;            
             InitializeComponent();
-            comboBox1.SelectedIndex = 10;            
+            comboBox1.SelectedIndex = 10;
         }
+        private void OpenF2()
+        {
+            Form2 f2 = new Form2();
+            f2.ShowDialog();
+
+        }
+
 
         private void OpenFolder(object sender, EventArgs e)     //открываем папку с изображениями
         {Repite:
@@ -55,16 +63,24 @@ namespace Image_comparison
                 MessageBox.Show("Нужно открыть папку", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Hand);
                 goto Repite;
             }
-
+            
             count_images = boxfiles.Length;
             comprasion_list = new string[count_images][,];
             small_count = new int[count_images][];
-
+            percent_done.value = 0;
+            Thread main_thread = new Thread(new ThreadStart(OpenF2));
+            main_thread.Start();
             for (int i = 0; i < count_images; i++)
             {   
                 small_count[i] = new int[256];
                 ReSize(i);
+                percent_done.value = Decimal.Multiply((Convert.ToDecimal(i+1) / Convert.ToDecimal(count_images)),100);
+
+                //progressBar1.Value = Convert.ToInt32(percent_done);
+                //PB_label.Text = Convert.ToString(percent_done)+"%";
             }
+            //progressBar1.Visible = false;
+            //PB_label.Visible = false;
 
             for (int i=0; i<count_images; i++)                                                   
             {
@@ -242,5 +258,6 @@ namespace Image_comparison
             pictureBox2.Image = null;
             out_resul(listBox1.SelectedIndex);
         }
+
     }
 }

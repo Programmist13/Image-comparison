@@ -17,6 +17,16 @@ namespace Image_comparison
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());
+            
+        }
+    }
+
+    static class percent_done
+    {
+        public static decimal value
+        {
+            get;
+            set;
         }
     }
 }
