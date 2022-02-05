@@ -31,12 +31,14 @@ namespace Image_comparison
         {
             this.PB_label = new System.Windows.Forms.Label();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.step_label = new System.Windows.Forms.Label();
+            this.count_label = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // PB_label
             // 
             this.PB_label.AutoSize = true;
-            this.PB_label.Location = new System.Drawing.Point(11, 16);
+            this.PB_label.Location = new System.Drawing.Point(11, 57);
             this.PB_label.Name = "PB_label";
             this.PB_label.Size = new System.Drawing.Size(27, 13);
             this.PB_label.TabIndex = 23;
@@ -44,17 +46,38 @@ namespace Image_comparison
             // 
             // progressBar1
             // 
-            this.progressBar1.Location = new System.Drawing.Point(44, 12);
+            this.progressBar1.Location = new System.Drawing.Point(44, 53);
             this.progressBar1.Name = "progressBar1";
             this.progressBar1.Size = new System.Drawing.Size(414, 23);
             this.progressBar1.TabIndex = 22;
+            // 
+            // step_label
+            // 
+            this.step_label.Anchor = System.Windows.Forms.AnchorStyles.Top;
+            this.step_label.Location = new System.Drawing.Point(-3, 14);
+            this.step_label.Name = "step_label";
+            this.step_label.Size = new System.Drawing.Size(479, 13);
+            this.step_label.TabIndex = 24;
+            this.step_label.Text = "Этап 1 из 3. Подготовка фото. Уменьшение размера";
+            this.step_label.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // count_label
+            // 
+            this.count_label.AutoSize = true;
+            this.count_label.Location = new System.Drawing.Point(206, 37);
+            this.count_label.Name = "count_label";
+            this.count_label.Size = new System.Drawing.Size(74, 13);
+            this.count_label.TabIndex = 25;
+            this.count_label.Text = "Фото 1 из 50";
             // 
             // Form2
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(470, 46);
+            this.ClientSize = new System.Drawing.Size(476, 87);
             this.ControlBox = false;
+            this.Controls.Add(this.count_label);
+            this.Controls.Add(this.step_label);
             this.Controls.Add(this.PB_label);
             this.Controls.Add(this.progressBar1);
             this.Name = "Form2";
@@ -70,5 +93,7 @@ namespace Image_comparison
         #endregion
         public System.Windows.Forms.ProgressBar progressBar1;
         public System.Windows.Forms.Label PB_label;
+        public System.Windows.Forms.Label step_label;
+        public System.Windows.Forms.Label count_label;
     }
 }

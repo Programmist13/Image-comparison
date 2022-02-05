@@ -28,5 +28,23 @@ namespace Image_comparison
             get;
             set;
         }
+
+        public static int photo
+        {
+            get;
+            set;
+        }
+
+        public static int all_photo
+        {
+            get;
+            set;
+        }
+
+        public static int step_token
+        {
+            get;
+            set;
+        }
     }
 }

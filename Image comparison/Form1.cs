@@ -39,7 +39,6 @@ namespace Image_comparison
         {
             Form2 f2 = new Form2();
             f2.ShowDialog();
-
         }
 
 
@@ -65,27 +64,26 @@ namespace Image_comparison
             }
             
             count_images = boxfiles.Length;
+            percent_done.all_photo = count_images;
             comprasion_list = new string[count_images][,];
             small_count = new int[count_images][];
             percent_done.value = 0;
             Thread main_thread = new Thread(new ThreadStart(OpenF2));
             main_thread.Start();
+            percent_done.step_token = 1;
             for (int i = 0; i < count_images; i++)
             {   
                 small_count[i] = new int[256];
                 ReSize(i);
                 percent_done.value = Decimal.Multiply((Convert.ToDecimal(i+1) / Convert.ToDecimal(count_images)),100);
-
-                //progressBar1.Value = Convert.ToInt32(percent_done);
-                //PB_label.Text = Convert.ToString(percent_done)+"%";
+                percent_done.photo = i+1;
             }
-            //progressBar1.Visible = false;
-            //PB_label.Visible = false;
-
+            percent_done.step_token = 2;
             for (int i=0; i<count_images; i++)                                                   
             {
                 comprasion_list[i] = new string[count_images, 2];
-
+                percent_done.photo = i + 1;
+                percent_done.value = Decimal.Multiply((Convert.ToDecimal(i + 1) / Convert.ToDecimal(count_images)), 100);
                 for (int j = 0; j < count_images; j++)
                 {
                     if (i != j)
@@ -95,42 +93,16 @@ namespace Image_comparison
                 }
                 x=0;
             }
+            percent_done.step_token = 3;
             sorting();
             listBox1.SelectedIndex = 0;
         }
 
-        private void Select_Picture(object sender, EventArgs e)     //показываем выбраное изображение и список похожих фото
-        {
-            if (pictureBox1.Image != null)
-            {
-                pictureBox1.Image.Dispose();
-            }
-            pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            pictureBox1.Image = Image.FromFile(boxfiles[listBox1.SelectedIndex]);
-            out_resul(listBox1.SelectedIndex);
-        }
-
-        void ReSize(int i)             //уменьшаем изображения и сохраняем их в массив image_box_all_small
+        //уменьшаем изображения и сохраняем их в массив image_box_all_small
+        void ReSize(int i)             
         {
             try
             {
-                    //Origin = new Bitmap(boxfiles[i]);
-                    {/*
-                        int newWidth, newHeight;
-                        int nWidth = 100, nHeight = 100;
-                        var coefH = (double)nHeight / (double)Origin.Height;        //0.09
-                        var coefW = (double)nWidth / (double)Origin.Width;          //0.052
-                        if (coefW >= coefH)     //если ширина больше высоты
-                        {
-                            newHeight = (int)(Origin.Height * coefH);
-                            newWidth = (int)(Origin.Width * coefH);
-                        }
-                        else
-                        {
-                            newHeight = (int)(Origin.Height * coefW);
-                            newWidth = (int)(Origin.Width * coefW);
-                        }*/
-                    }
                     origin = new Bitmap(boxfiles[i]);
                     origin_small = new Bitmap(origin, new Size(100, 100));
                     splitting(origin_small, i);
@@ -182,11 +154,12 @@ namespace Image_comparison
 
         //сортировка массива ассицаций похожих фотографий по степени убывания
         void sorting()
-        {
-            
+        {            
             //сортировка пузыриком по убыванию значений
             for (int k = 0; k < count_images; k++)
             {
+                percent_done.photo = k + 1;
+                percent_done.value = Decimal.Multiply((Convert.ToDecimal(k + 1) / Convert.ToDecimal(count_images)), 100);
                 for (int i = 0; i < count_images; i++)
                 {
                     for (int j = 0; j < count_images - 1; j++)
@@ -205,11 +178,24 @@ namespace Image_comparison
                 }
             }
         }
+       
+        //показываем выбраное изображение и список похожих фото
+        private void Select_Picture(object sender, EventArgs e)    
+        {
+            if (pictureBox1.Image != null)
+            {
+                pictureBox1.Image.Dispose();
+            }
+            pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            pictureBox1.Image = Image.FromFile(boxfiles[listBox1.SelectedIndex]);
+            pictureBox2.Image = null;
+            out_resul(listBox1.SelectedIndex);
+        }
 
+        //выводим список ассицаций к выбранному фото
         void out_resul(int i)
         {
             listBox2.Items.Clear();
-
                 for (int j = 0; j < comprasion_list.Length; j++)
                 {
                     if (comprasion_list[i][j, 0] != null & Convert.ToDecimal(comprasion_list[i][j, 1])>origin_level)
@@ -220,9 +206,7 @@ namespace Image_comparison
                 if (listBox2.Items.Count != 0)
                 {
                     listBox2.SelectedIndex = 0;
-                }
-
-            
+                }            
         }
 
         private void Select_Picture2(object sender, EventArgs e)
