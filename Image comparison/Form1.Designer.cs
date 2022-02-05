@@ -67,7 +67,7 @@ namespace Image_comparison
             // Label_folder
             // 
             this.Label_folder.AutoSize = true;
-            this.Label_folder.Location = new System.Drawing.Point(12, 43);
+            this.Label_folder.Location = new System.Drawing.Point(485, 22);
             this.Label_folder.Name = "Label_folder";
             this.Label_folder.Size = new System.Drawing.Size(16, 13);
             this.Label_folder.TabIndex = 2;
@@ -105,7 +105,7 @@ namespace Image_comparison
             "60%",
             "55%",
             "50%"});
-            this.comboBox1.Location = new System.Drawing.Point(316, 43);
+            this.comboBox1.Location = new System.Drawing.Point(158, 45);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(121, 21);
             this.comboBox1.TabIndex = 15;
@@ -122,11 +122,11 @@ namespace Image_comparison
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(313, 17);
+            this.label3.Location = new System.Drawing.Point(18, 49);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(134, 13);
+            this.label3.Size = new System.Drawing.Size(132, 13);
             this.label3.TabIndex = 18;
-            this.label3.Text = "Степень оригинальности";
+            this.label3.Text = "Фильтр оригинальности";
             // 
             // listBox2
             // 

@@ -17,31 +17,33 @@ namespace Image_comparison
 {
     public partial class Form1 : Form
     {
+        #region initial value
+    
         string[] boxfiles;                  //храним полный путь к каждому файлу
+        string[] name_box;
+        string[] patch_box_adaptive;
         int count_images;                   //общее количество снимков
         string[][,] comprasion_list;        //список сопоставлений фотографий
         int[][] small_count;                //накопитель информации по снимкам
         int origin_level = 50;                //уставка степени оригинальности
-        Bitmap origin = new Bitmap(100,100);
+        Bitmap origin = new Bitmap(100, 100);
         Bitmap origin_small = new Bitmap(100, 100);                //делаем ссылку для маленького снимка
         Bitmap comp_small = new Bitmap(100, 100);
         Bitmap Picture_2 = new Bitmap(100, 100);
         int x = 0;                          //счётчик сравниваемых фото для comprassion_difference
         int[] color_deff = new int[256];
-        
+        #endregion
         public Form1()
         {
             this.WindowState = FormWindowState.Maximized;            
             InitializeComponent();
             comboBox1.SelectedIndex = 10;
         }
-        private void OpenF2()
+        private void OpenF2()                                   //открываем ProgressBar в отдельном потоке
         {
             Form2 f2 = new Form2();
             f2.ShowDialog();
         }
-
-
         private void OpenFolder(object sender, EventArgs e)     //открываем папку с изображениями
         {Repite:
             try
@@ -54,16 +56,20 @@ namespace Image_comparison
                 foreach (FileInfo file in allfiles.GetFiles("*.jpg", SearchOption.AllDirectories))      //перебираем все файлы jpg, включая вложенные папки
                 {
                     listBox1.Items.Add(Path.GetFileNameWithoutExtension(file.FullName));                //отображаем имена файлов стобликом
-                }
-                
+                }                
             }
             catch (ArgumentException)
             {
                 MessageBox.Show("Нужно открыть папку", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Hand);
                 goto Repite;
             }
-            
+            percent_done.step_token = 0;
             count_images = boxfiles.Length;
+            name_box = new string[count_images];
+            for (int i = 0; i < count_images; i++)
+            {
+                name_box[i] = listBox1.Items[i].ToString();
+            }
             percent_done.all_photo = count_images;
             comprasion_list = new string[count_images][,];
             small_count = new int[count_images][];
@@ -96,6 +102,7 @@ namespace Image_comparison
             percent_done.step_token = 3;
             sorting();
             listBox1.SelectedIndex = 0;
+            percent_done.step_token = 4;             //процесс загрузки, обработки и сортировки фото завершился
         }
 
         //уменьшаем изображения и сохраняем их в массив image_box_all_small
@@ -238,10 +245,8 @@ namespace Image_comparison
                 case 10: origin_level = 50; break;
                 default: origin_level = 75; break;
             }
-
             pictureBox2.Image = null;
             out_resul(listBox1.SelectedIndex);
         }
-
     }
 }
