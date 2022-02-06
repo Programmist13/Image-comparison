@@ -21,18 +21,21 @@ namespace Image_comparison
     
         string[] boxfiles;                  //храним полный путь к каждому файлу
         string[] name_box;
-        string[] patch_box_adaptive;
-        int count_images;                   //общее количество снимков
         string[][,] comprasion_list;        //список сопоставлений фотографий
+        string[,] temp;
         int[][] small_count;                //накопитель информации по снимкам
-        int origin_level = 50;                //уставка степени оригинальности
+        int[] color_deff = new int[256];
+        
+        int count_images;                   //общее количество снимков
+        int origin_level = 50;              //уставка степени оригинальности
+        int x = 0;                          //счётчик сравниваемых фото для comprassion_difference
+
         Bitmap origin = new Bitmap(100, 100);
         Bitmap origin_small = new Bitmap(100, 100);                //делаем ссылку для маленького снимка
         Bitmap comp_small = new Bitmap(100, 100);
-        Bitmap Picture_2 = new Bitmap(100, 100);
-        int x = 0;                          //счётчик сравниваемых фото для comprassion_difference
-        int[] color_deff = new int[256];
+        Bitmap Picture_2 = new Bitmap(100, 100);        
         #endregion
+
         public Form1()
         {
             this.WindowState = FormWindowState.Maximized;            
@@ -73,9 +76,12 @@ namespace Image_comparison
             percent_done.all_photo = count_images;
             comprasion_list = new string[count_images][,];
             small_count = new int[count_images][];
+            temp = new string[count_images, 2];
             percent_done.value = 0;
             Thread main_thread = new Thread(new ThreadStart(OpenF2));
             main_thread.Start();
+
+            //Шаг 1. Уменьшаем фото
             percent_done.step_token = 1;
             for (int i = 0; i < count_images; i++)
             {   
@@ -84,6 +90,8 @@ namespace Image_comparison
                 percent_done.value = Decimal.Multiply((Convert.ToDecimal(i+1) / Convert.ToDecimal(count_images)),100);
                 percent_done.photo = i+1;
             }
+
+            //Шаг 2. Сравниваем фото
             percent_done.step_token = 2;
             for (int i=0; i<count_images; i++)                                                   
             {
@@ -99,8 +107,11 @@ namespace Image_comparison
                 }
                 x=0;
             }
+
+            //Шаг 3. Сортировка фото
             percent_done.step_token = 3;
-            sorting();
+            sorting_1();                             //вначале сортируем все сопоставления по убывания
+            sorting_2();                             //затем сортируем оригинальные фото по убыванию
             listBox1.SelectedIndex = 0;
             percent_done.step_token = 4;             //процесс загрузки, обработки и сортировки фото завершился
         }
@@ -122,7 +133,7 @@ namespace Image_comparison
             
         }
 
-        //метод разбивает каждый маленький снимок по цветам и записывает информацию по количеству цветов в отдельный массив массивов comprasion_list
+        //метод разбивает каждый маленький снимок по цветам и записывает информацию по количеству цветов в отдельный массив 
         void splitting (Bitmap input, int i)
         {           
                 for (int j = 0; j < input.Height; j++)
@@ -148,8 +159,7 @@ namespace Image_comparison
                 {
                     color_deff[k] = Math.Abs(small_count[i][k] - small_count[j][k]);            //фиксируем разницу по каждому цвету между сравниваемыми снимками
                     sum_diff += color_deff[k];                                                              //накапливаем общую разницу между снимками
-                    resul = Math.Round(Math.Abs(((sum_diff * 100) / 2550000) * 100 - 100),2);                             //вычисляем общую степень схожести в процентах
-                                                                                                                   //если у снимка схожесть более 75% только тогда вносим его в список похожих фотографий
+                    resul = Math.Round(Math.Abs(((sum_diff * 100) / 2550000) * 100 - 100),2);                             //вычисляем общую степень схожести в процентах                                                                                                                   
                     if (k==255)
                     {
                         comprasion_list[i][x,0] = Convert.ToString(boxfiles[j]);
@@ -160,7 +170,7 @@ namespace Image_comparison
         }
 
         //сортировка массива ассицаций похожих фотографий по степени убывания
-        void sorting()
+        void sorting_1()
         {            
             //сортировка пузыриком по убыванию значений
             for (int k = 0; k < count_images; k++)
@@ -179,10 +189,40 @@ namespace Image_comparison
                             comprasion_list[k][j,1] = comprasion_list[k][j + 1,1];
                             comprasion_list[k][j + 1, 0] = temp_patch;
                             comprasion_list[k][j + 1, 1] = temp_perc;
-
                         }
                     }
                 }
+            }
+        }
+
+        //сортировка оригинальных фото по убыванию процента сопоставляемых фото
+        void sorting_2()
+        {
+                //percent_done.photo = k + 1;
+                //percent_done.value = Decimal.Multiply((Convert.ToDecimal(k + 1) / Convert.ToDecimal(count_images)), 100)
+            for (int i = 0; i < count_images; i++)
+            {
+                for (int j = 0; j < count_images - 1; j++)
+                {
+                    if ((comprasion_list[j][0, 1] == null || comprasion_list[j + 1][0, 1] == null) || (Convert.ToSingle(comprasion_list[j][0, 1]) < Convert.ToSingle(comprasion_list[j + 1][0, 1])))
+                    {                                                
+                        Array.Copy(comprasion_list[j], temp, count_images);
+                        Array.Copy(comprasion_list[j + 1], comprasion_list[j], count_images);
+                        Array.Copy(temp, comprasion_list[j+1], count_images);
+                        string patch = boxfiles[j];
+                        boxfiles[j] = boxfiles[j + 1];
+                        boxfiles[j + 1] = patch;
+                        string name = name_box[j];
+                        name_box[j] = name_box[j + 1];
+                        name_box[j + 1] = name;
+                        //2. Вывести имен на listbox после полного формирования boxfiles
+                    }
+                }
+            }
+            listBox1.Items.Clear();
+            foreach (string i in name_box)
+            {
+                listBox1.Items.Add(i);                //отображаем имена файлов стобликом
             }
         }
        
