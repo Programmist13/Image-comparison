@@ -236,11 +236,29 @@ namespace Image_comparison
             pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             pictureBox1.Image = Image.FromFile(boxfiles[listBox1.SelectedIndex]);
             pictureBox2.Image = null;
-            out_resul(listBox1.SelectedIndex);
+            out_resul_2(listBox1.SelectedIndex);
         }
 
+        //фильтруем список оригинальных фото
+        void  out_resul()
+        {
+            listBox1.Items.Clear();
+            for (int i = 0; i < count_images; i++)
+            {
+                if (name_box[i] != null & Convert.ToDecimal(comprasion_list[i][0, 1]) > origin_level)
+                {
+                    listBox1.Items.Add(name_box[i]);                    
+                }
+            }
+            if (listBox1.Items.Count != 0)
+            {
+                listBox1.SelectedIndex = 0;
+            }
+        }
+
+
         //выводим список ассицаций к выбранному фото
-        void out_resul(int i)
+        void out_resul_2(int i)
         {
             listBox2.Items.Clear();
                 for (int j = 0; j < comprasion_list.Length; j++)
@@ -285,8 +303,10 @@ namespace Image_comparison
                 case 10: origin_level = 50; break;
                 default: origin_level = 75; break;
             }
+
             pictureBox2.Image = null;
-            out_resul(listBox1.SelectedIndex);
+            out_resul();
+            out_resul_2(listBox1.SelectedIndex);
         }
     }
 }
